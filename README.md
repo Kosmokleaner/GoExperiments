@@ -27,3 +27,4 @@ example output (4 core Xeon with 2x Hyperthreading, around 8 is ideal):
 	2017/04/28 00:47:16 8192x5120 i:255 tileSize:2 15. Time: 2.3082963s 19.19%  <--- faster noise or OS scheduler property
 
 see Julia1Downsampled.png (GitHub version is downsampled save bandwith)
+![Julia1Downsampled](Julia1Downsampled.png)
