@@ -1,7 +1,7 @@
 # GoExperiments
 Go (language) Experiments
 
-Julia1.Go
+## Julia1.Go
 
 purpose: test go float32 performance with channels and multiple workers 1 - 15 workers
 
@@ -28,3 +28,12 @@ example output (4 core Xeon with 2x Hyperthreading, around 8 is ideal):
 
 see Julia1Downsampled.png (GitHub version is downsampled save bandwith)
 ![Julia1Downsampled](Julia1Downsampled.png)
+
+## CppJuliThreaded
+
+purpose: C++ similar to Julia1.go to compare performance, implemented with pthreads (hatrd coded to 2 threads.
+Example output (32bit, same system as for Julia1.go stats):
+
+     8192x5120 i:255 ... 4440 ms    <--- notice the same cost 6221ms in go, looks like 40% slower than C++
+     
+ 
