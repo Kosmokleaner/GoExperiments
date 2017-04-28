@@ -31,10 +31,10 @@ see Julia1Downsampled.png (GitHub version is downsampled save bandwith)
 
 ## CppJuliThreaded
 
-purpose: C++ similar to Julia1.go to compare performance, implemented with pthreads (hard coded to 2 threads. 128x128 tiles instead of horizontal slices
+purpose: C++ similar to Julia1.go to compare performance, implemented with pthreads (hard coded to 2 threads.)
 
 Example output (32bit exe, compile with fast FloatingPointModel, same system as for Julia1.go stats):
 
-     8192x5120 i:255 ... 4440 ms    <--- notice the same cost 6221ms in go, looks like 40% slower than C++
+     8192x5120 i:255 ... 4330 ms    <--- notice the same cost 6221ms in go, looks like 43% slower than C++
      
  
