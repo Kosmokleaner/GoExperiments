@@ -46,6 +46,7 @@ Server: go, 16x16 tiles, a tile is 128x128, dat is sent as png, not multithreade
 
 Client: JavaScript using Canvas, bilinear filtering (Chrome is ok, Edge shows lines) with minor border artifact because of missing border, a tile is requested only once (timeout could be handled better)
  
+![JuliaClient.png](JuliaClient.png)
 
 
 
