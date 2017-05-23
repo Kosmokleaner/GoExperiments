@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 package main
 
 // from: https://astaxie.gitbooks.io/build-web-application-with-golang/en/08.3.html
@@ -782,5 +781,4 @@ func main() {
 	router.GET("/blue/:x/:y", blueHandler)
 	
 	log.Fatal(http.ListenAndServe(":8080", router))
->>>>>>> origin/master
 }
