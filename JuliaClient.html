@@ -1,0 +1,286 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+
+    <script type="application/javascript">
+
+	// todo:
+	// * mips to allow near endless zoom in
+	// * brower: Chrome works, Edge has some rendeirng atrifacs (thin lines between tiles), others not tested
+	// * julia setup in .go is quished
+	// * go code is not multithreaded yet
+	// * if server is started too late or an image wasn't coming in time, the image is not requested again
+
+	// -100000 if not known
+	var CurrentMousePosX = -100000;
+	var CurrentMousePosY = 0;
+	
+	var MouseDownL = false;
+
+	var DocZoom = 1;
+	var DocPanX = 0;
+	var DocPanY = 0;
+
+	var fallbackImage;
+	var testImages = [];
+	
+	var bUpdateCanvas = true;
+	var LastUpdateTime = 0;
+
+	// align with .go code!!
+	var tilecount = 16;
+
+	document.addEventListener("DOMContentLoaded", init, false);
+	window.addEventListener("keydown", moveSomething, false);
+	window.addEventListener('resize', resize, false);
+
+	
+	function init()
+	{
+		fallbackImage = new Image();
+		fallbackImage.src = 'visualpro.png';	// 128x128
+
+		for (var y = 0; y < tilecount; y++)
+		{
+			for (var x = 0; x < tilecount; x++)
+			{
+				var temp = new Image();
+		
+				testImages.push(temp);
+
+				testImages[x + y * tilecount].src = 'http://localhost:8080/blue/' + x + '/' + y;
+			}
+		}
+
+		var canvas = document.getElementById("canvas");
+		canvas.addEventListener("mousedown", OnMouseDown, false);
+		canvas.addEventListener("mouseup", OnMouseUp, false);
+		canvas.addEventListener("mousemove", OnMouseMove, false);
+		canvas.addEventListener('mousewheel',OnMouseWheel, false);
+		canvas.addEventListener('mouseleave',OnMouseLeave, false);
+
+		document.oncontextmenu=RightMouseDown;
+
+		resize();
+
+		requestAnimationFrame(draw);	
+	}
+
+	function resize() {
+		// see http://stackoverflow.com/questions/1664785/resize-html5-canvas-to-fit-window
+		var canvas = document.getElementById("canvas");
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+	}
+
+
+	function RightMouseDown() { return false; }
+   
+	function moveSomething(e) {
+		switch(e.keyCode) {
+			case 32:    // space
+				DocZoom=1;
+				DocPanX=0;
+				DocPanY=0;
+				bUpdateCanvas = true;
+				break;
+			case 37:    // left
+				DocPanX += 100;
+				bUpdateCanvas = true;
+				break;
+			case 38:    // up
+				DocPanY += 100;
+				bUpdateCanvas = true;
+				break;
+			case 39:    // right
+				DocPanX -= 100;
+				bUpdateCanvas = true;
+				break;
+			case 40:    // down
+				DocPanY -= 100;
+				bUpdateCanvas = true;
+				break;
+			case 33:    // page up
+				//todo DocZoom *= 1.1;
+				ClampDocZoom();
+				bUpdateCanvas = true;
+				break;
+			case 34:    // page down
+				//todo DocZoom /= 1.1;
+				ClampDocZoom();
+				bUpdateCanvas = true;				
+				break;
+		}
+	}
+	
+	function ClampDocZoom() {
+		DocZoom = Math.min(10, Math.max(0.1, DocZoom));
+	}
+
+	function OnMouseWheel(e) {
+		DocPanX -= CurrentMousePosX;
+		DocPanY -= CurrentMousePosY;
+		DocPanX /= DocZoom;
+		DocPanY /= DocZoom;
+		DocZoom *= 1 + e.wheelDelta * 0.001;
+		ClampDocZoom();
+		
+		DocPanX *= DocZoom;
+		DocPanY *= DocZoom;
+		DocPanX += CurrentMousePosX;
+		DocPanY += CurrentMousePosY;
+		if(DocZoom<0)
+		{
+			DocZoom = 0;
+		}
+		bUpdateCanvas = true;
+		return false;
+	}
+
+	function OnMouseDown(event)
+	{
+		MouseDownL = true;
+	}
+		
+	function OnMouseUp(event)
+	{
+		MouseDownL = false;
+	}
+	
+	function OnMouseLeave(event)
+	{
+		CurrentMousePosX = -100000;
+		MouseDownL = false;
+	}
+
+	function OnMouseMove(event)
+	{
+		var x = new Number();
+		var y = new Number();
+		var canvas = document.getElementById("canvas");
+
+		if (event.x != undefined && event.y != undefined)
+		{
+			x = event.x;
+			y = event.y;
+		}
+		else // Firefox method to get the position
+		{
+			x = event.clientX + document.body.scrollLeft +
+				document.documentElement.scrollLeft;
+			y = event.clientY + document.body.scrollTop +
+				document.documentElement.scrollTop;
+		}
+
+		x -= canvas.offsetLeft;
+		y -= canvas.offsetTop;
+
+		if(MouseDownL && CurrentMousePosX != -100000)
+		{
+			DocPanX += x - CurrentMousePosX;
+			DocPanY += y - CurrentMousePosY;
+		}
+
+		CurrentMousePosX = x;
+		CurrentMousePosY = y;
+
+		bUpdateCanvas = true;
+	}
+
+	function draw() {
+
+	// http://unixpapa.com/js/mouse.html
+	// https://www.kirupa.com/canvas/follow_mouse_cursor.htm
+	// http://stackoverflow.com/questions/10313142/javascript-capture-mouse-wheel-event-and-do-not-scroll-the-page
+	// http://www.williammalone.com/articles/create-html5-canvas-javascript-drawing-app/
+
+		var now = new Date().getTime();
+		var FrameTime = now - LastUpdateTime;
+		LastUpdateTime = now;
+	
+		if(bUpdateCanvas)
+		{
+			bUpdateCanvas = false;
+			var bHadServerConnection = true;
+
+			var canvas = document.getElementById('canvas');
+			if (canvas.getContext) {
+				var ctx = canvas.getContext('2d');
+
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+		
+				var PatternSize = 128 * DocZoom;		
+		
+				for (var y = 0; y < tilecount; y++)
+				for (var x = 0; x < tilecount; x++)
+				{	
+					var ThisImage = testImages[x + y * tilecount];
+					
+					// https://stackoverflow.com/questions/23657424/why-image-complete-property-always-return-true-even-if-there-is-no-src-tag
+					if(ThisImage.complete && ThisImage.naturalWidth > 0)
+					{
+						bHadServerConnection = true;
+					}
+					else
+					{
+						ThisImage = fallbackImage
+						bUpdateCanvas = true;
+					}
+					ctx.drawImage(ThisImage, DocPanX + PatternSize * x, DocPanY + PatternSize * y, PatternSize, PatternSize);
+				}
+				
+				var y = 0;
+		
+				// top bar with text
+				ctx.fillStyle = 'rgba(200, 200, 200, 0.9)';
+				ctx.fillRect(0, 0, canvas.width, 28); y += 28;
+				ctx.fillStyle = "black";
+				ctx.textAlign = "center";
+				ctx.font = "18px Arial";
+				ctx.fillText("Reset(Space)   Pan(MouseDrag)   Zoom(MouseWheel): " + (DocZoom*100).toFixed(1) + "%",canvas.width/2, y - 8);
+		
+				ctx.textAlign = "left";
+				ctx.fillText(FrameTime + " ms", 10, y - 8);
+		
+				if(bHadServerConnection)
+				{
+					ctx.fillStyle = "black";
+					ctx.fillRect(0, y, canvas.width, 28); y += 28;
+					ctx.fillStyle = "red";
+					ctx.fillText("* Server connection not established, run JuliaServer and press F5", 10, y - 8);
+				}
+
+				// !! to make the result a bool, if(window.chrome) should work as well
+				var isChrome = !!window.chrome;
+
+				if(!isChrome)
+				{
+					ctx.fillStyle = "black";
+					ctx.fillRect(0, y, canvas.width, 28); y += 28;
+					ctx.fillStyle = "red";
+					ctx.fillText("* use Chrome", 10, y - 8);
+				}
+			}
+		}
+
+		// for now we render the content each frame, this might not be needed or some applications
+		requestAnimationFrame(draw);
+	}
+    </script>
+	
+<style>
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  border: 0;
+  overflow: hidden; /*  Disable scrollbars */
+  display: block;  /* No floating content on sides */
+}
+</style>
+</head>
+<body>
+	<canvas id="canvas" style="position:absolute; left:0px; top:0px; border: 1px solid black;"></canvas>
+</body>
+</html>
