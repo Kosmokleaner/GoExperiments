@@ -36,5 +36,17 @@ purpose: C++ similar to Julia1.go to compare performance, implemented with pthre
 Example output (32bit exe, compile with fast FloatingPointModel, same system as for Julia1.go stats):
 
      8192x5120 i:255 ... 4330 ms    <--- notice the same cost 6221ms in go, looks like 43% slower than C++
-     
+    
+
+## JuliaServer.go and JuliaClient.html (JavaScript)
+
+purpose: Simple WebServer in go and JavaScript UI to pan and zoom the result, JavsScript code can be useful to browse other data e.g. debug UV layout
+ 
+Server: go, 16x16 tiles, a tile is 128x128, dat is sent as png, not multithreaded yet, can handle multiple client but no load balancing
+
+Client: JavaScript using Canvas, bilinear filtering (Chrome is ok, Edge shows lines) with minor border artifact because of missing border, a tile is requested only once (timeout could be handled better)
+ 
+
+
+
  
