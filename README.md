@@ -48,6 +48,8 @@ Client: JavaScript using Canvas, bilinear filtering (Chrome is ok, Edge shows li
  
 ![JuliaClient.PNG](JuliaClient.PNG)
 
+compile: go build JuliaServer.go
+run: JuliaServer.exe, JuliaClient.hmll
 
 
  
